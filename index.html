@@ -44,9 +44,6 @@ body{padding-bottom:60px;}
   <label>Kategori</label>
   <select id="kategori" onchange="updateProduk()">
     <option value="">-- Pilih Kategori --</option>
-    <option>Pulsa</option>
-    <option>E-Wallet</option>
-    <option>Token PLN</option>
   </select>
   <label>Produk</label>
   <select id="produk" onchange="isiHarga()">
@@ -85,6 +82,7 @@ body{padding-bottom:60px;}
 <div class="form" id="formLaporan" style="display:none">
   <h3>Laporan</h3>
   <div id="isiLaporan"><i>Laporan akan muncul di sini</i></div>
+  <button onclick="refreshLaporan()">Refresh</button>
 </div>
 
 <div class="bottom-nav">
@@ -94,22 +92,6 @@ body{padding-bottom:60px;}
 </div>
 
 <script>
-// ===== DATA PRODUK DEFAULT =====
-let dataProduk = {
-  "Pulsa":[
-    {nama:"Telkomsel 10K", nominal:10000, modal:9800},
-    {nama:"XL 10K", nominal:10000, modal:9700},
-    {nama:"Indosat 20K", nominal:20000, modal:19500}
-  ],
-  "E-Wallet":[
-    {nama:"Dana 10K", nominal:10000, modal:9900},
-    {nama:"OVO 20K", nominal:20000, modal:19800}
-  ],
-  "Token PLN":[
-    {nama:"Token 50K", nominal:50000, modal:49500}
-  ]
-};
-
 // ===== MENU SWITCH =====
 function showForm(id,el){
   document.querySelectorAll('.menu .card').forEach(c=>c.classList.remove('active'));
@@ -133,26 +115,42 @@ function updateProduk(){
   document.getElementById("nominal").value="";
   document.getElementById("modal").value="";
   document.getElementById("untung").value="";
-  if(!kategori || !dataProduk[kategori]) return;
-  dataProduk[kategori].forEach((p,i)=>{
-    produk.innerHTML += `<option value="${i}">${p.nama}</option>`;
-  });
+
+  if(!kategori) return;
+
+  google.script.run.withSuccessHandler(function(data){
+    // filter sesuai kategori
+    data.filter(p=>p[0]===kategori).forEach((p,i)=>{
+      produk.innerHTML += `<option value="${i}" data-nominal="${p[2]}" data-modal="${p[3]}">${p[1]}</option>`;
+    });
+  }).getProduk();
 }
 
 function isiHarga(){
-  const kategori = document.getElementById("kategori").value;
-  const index = document.getElementById("produk").value;
-  if(index==="") return;
-  const p = dataProduk[kategori][index];
-  document.getElementById("nominal").value = p.nominal;
-  document.getElementById("modal").value = p.modal;
-  document.getElementById("untung").value = p.nominal - p.modal;
+  const produkEl = document.getElementById("produk");
+  const selected = produkEl.options[produkEl.selectedIndex];
+  if(!selected || selected.value==="") return;
+  document.getElementById("nominal").value = selected.dataset.nominal;
+  document.getElementById("modal").value = selected.dataset.modal;
+  document.getElementById("untung").value = selected.dataset.nominal - selected.dataset.modal;
 }
 
 function simpanTransaksi(){
-  alert("Transaksi tersimpan (dummy, backend belum aktif)");
-  document.getElementById("kategori").value="";
-  updateProduk();
+  const data = {
+    kategori: document.getElementById("kategori").value,
+    produk: document.getElementById("produk").selectedOptions[0].text,
+    nominal: Number(document.getElementById("nominal").value),
+    modal: Number(document.getElementById("modal").value),
+    untung: Number(document.getElementById("untung").value)
+  };
+  google.script.run.withSuccessHandler(function(){
+    alert("Transaksi tersimpan ✔");
+    document.getElementById("kategori").value="";
+    document.getElementById("produk").innerHTML = '<option value="">-- Pilih Produk --</option>';
+    document.getElementById("nominal").value="";
+    document.getElementById("modal").value="";
+    document.getElementById("untung").value="";
+  }).simpanTransaksi(data);
 }
 
 // ===== PRODUK =====
@@ -161,20 +159,40 @@ function tambahProduk(){
   const nama = document.getElementById("namaProduk").value;
   const nominal = Number(document.getElementById("nominalProduk").value);
   const modal = Number(document.getElementById("modalProduk").value);
+
   if(!kategori || !nama || !nominal || !modal){
     alert("Lengkapi data produk!");
     return;
   }
-  if(!dataProduk[kategori]) dataProduk[kategori]=[];
-  dataProduk[kategori].push({nama,nominal,modal});
-  document.getElementById("namaProduk").value="";
-  document.getElementById("nominalProduk").value="";
-  document.getElementById("modalProduk").value="";
-  document.getElementById("notifProduk").innerHTML="Produk berhasil ditambahkan ✔";
 
-  // update dropdown transaksi jika kategori sama
-  if(document.getElementById("kategori").value===kategori) updateProduk();
+  google.script.run.withSuccessHandler(function(){
+    document.getElementById("namaProduk").value="";
+    document.getElementById("nominalProduk").value="";
+    document.getElementById("modalProduk").value="";
+    document.getElementById("notifProduk").innerHTML="Produk berhasil ditambahkan ✔";
+    updateProduk();
+  }).tambahProduk(kategori,nama,nominal,modal);
+}
+
+// ===== LAPORAN =====
+function refreshLaporan(){
+  google.script.run.withSuccessHandler(function(data){
+    if(data.length<=1){
+      document.getElementById("isiLaporan").innerHTML="<i>Tidak ada transaksi</i>";
+      return;
+    }
+    let html = '<div class="laporan-wrap"><div class="laporan-total"><small>Total Untung</small><h1>';
+    const total = data.slice(1).reduce((acc,row)=>acc + Number(row[5]),0);
+    html += total + '</h1></div>';
+    html += '<div class="laporan-list">';
+    data.slice(1).forEach(row=>{
+      html += `<div class="laporan-item"><b>${row[2]}</b><span>Rp ${row[5]}</span></div>`;
+    });
+    html += '</div></div>';
+    document.getElementById("isiLaporan").innerHTML = html;
+  }).getTransaksi();
 }
 </script>
+
 </body>
 </html>
