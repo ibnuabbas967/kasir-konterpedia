@@ -1,135 +1,151 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kasir Konterpedia</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kasir Konterpedia</title>
 
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0d6efd">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0d6efd">
 
-  <style>
-    body {
-      margin: 0;
-      font-family: system-ui, sans-serif;
-      background: #f4f6f8;
-    }
-    header {
-      background: #0d6efd;
-      color: #fff;
-      padding: 14px;
-      text-align: center;
-      font-weight: bold;
-    }
-    .menu {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-      padding: 12px;
-    }
-    .card {
-      background: #fff;
-      border-radius: 12px;
-      padding: 20px;
-      text-align: center;
-      font-weight: 600;
-      box-shadow: 0 2px 6px rgba(0,0,0,.1);
-      cursor: pointer;
-    }
-    .form {
-  background: #fff;
-  margin: 12px;
-  padding: 15px;
-  border-radius: 12px;
-  box-shadow: 0 2px 6px rgba(0,0,0,.1);
+<style>
+body{
+  margin:0;
+  font-family:system-ui,sans-serif;
+  background:#f4f6f8;
 }
 
-.form h3 {
-  margin-top: 0;
+/* HEADER */
+header{
+  background:#0d6efd;
+  color:#fff;
+  padding:14px;
+  text-align:center;
+  font-size:18px;
+  font-weight:700;
 }
 
-.form input, .form select {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 10px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
+/* MENU */
+.menu{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  padding:12px;
+}
+.menu .card{
+  background:#fff;
+  border-radius:12px;
+  padding:12px 5px;
+  text-align:center;
+  font-size:13px;
+  font-weight:600;
+  box-shadow:0 2px 6px rgba(0,0,0,.1);
+  cursor:pointer;
+}
+.menu .card.active{
+  background:#0d6efd;
+  color:#fff;
 }
 
-.form button {
-  width: 100%;
-  padding: 12px;
-  background: #0d6efd;
-  color: white;
-  border: none;
-  border-radius: 10px;
-  font-weight: bold;
+/* FORM */
+.form{
+  background:#fff;
+  margin:12px;
+  padding:15px;
+  border-radius:12px;
+  box-shadow:0 2px 6px rgba(0,0,0,.1);
 }
-  </style>
+.form h3{
+  margin:0 0 10px;
+}
+.form select,
+.form input{
+  width:100%;
+  padding:10px;
+  margin-bottom:10px;
+  border-radius:8px;
+  border:1px solid #ccc;
+  font-size:14px;
+}
+.form button{
+  width:100%;
+  padding:12px;
+  background:#0d6efd;
+  color:#fff;
+  border:none;
+  border-radius:10px;
+  font-weight:700;
+  font-size:15px;
+}
+
+/* RESPONSIVE */
+@media(max-width:400px){
+  .menu{
+    grid-template-columns:repeat(2,1fr);
+  }
+}
+</style>
 </head>
 
 <body>
-  <header>Kasir Konterpedia</header>
 
-  <div class="menu">
-<body>
-  <header>Kasir Konterpedia</header>
+<header>Kasir Konterpedia</header>
 
-  <div class="menu">
-    <div class="card">Pulsa</div>
-    <div class="card">Token PLN</div>
-    <div class="card">E-Wallet</div>
-    <div class="card">Laporan</div>
-  </div>
+<!-- MENU -->
+<div class="menu">
+  <div class="card active" onclick="setJenis('Pulsa',this)">Pulsa</div>
+  <div class="card" onclick="setJenis('Token PLN',this)">Token PLN</div>
+  <div class="card" onclick="setJenis('E-Wallet',this)">E-Wallet</div>
+  <div class="card" onclick="alert('Coming soon')">Laporan</div>
+</div>
 
-  <!-- FORM TRANSAKSI -->
-  <div class="form">
-    <h3>Input Transaksi</h3>
+<!-- FORM TRANSAKSI -->
+<div class="form">
+  <h3 id="judul">Input Pulsa</h3>
 
-    <select id="jenis">
-      <option value="Pulsa">Pulsa</option>
-      <option value="Token">Token PLN</option>
-      <option value="Ewallet">E-Wallet</option>
-    </select>
+  <input id="produk" placeholder="Nama Produk (ex: Telkomsel 10K)">
+  <input id="harga" type="number" placeholder="Harga Jual">
 
-    <input id="produk" placeholder="Nama Produk">
-    <input id="harga" type="number" placeholder="Harga">
+  <button onclick="simpan()">Simpan Transaksi</button>
+</div>
 
-    <button onclick="simpan()">Simpan Transaksi</button>
-  </div>
+<script>
+let jenisAktif = "Pulsa";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwShdpVDF7Yjx8Sk7g7GYKsnMz1ps-RS5DdzPoOlBuQJsyKrdfzL3ahobbwfwPGOpyY/exec";
 
-  <script>
-  const GAS_URL = "https://script.google.com/macros/s/AKfycbwShdpVDF7Yjx8Sk7g7GYKsnMz1ps-RS5DdzPoOlBuQJsyKrdfzL3ahobbwfwPGOpyY/exec";
+function setJenis(jenis,el){
+  jenisAktif = jenis;
+  document.getElementById('judul').innerText = "Input " + jenis;
+  document.querySelectorAll('.menu .card').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+}
 
-  function simpan(){
-    fetch(GAS_URL,{
-      method:"POST",
-      body: JSON.stringify({
-        jenis: document.getElementById('jenis').value,
-        produk: document.getElementById('produk').value,
-        harga: document.getElementById('harga').value
-      })
-    })
-    .then(r=>r.json())
-    .then(()=>{
-      alert("Transaksi tersimpan");
-      produk.value="";
-      harga.value="";
-    });
+function simpan(){
+  if(!produk.value || !harga.value){
+    alert("Lengkapi data");
+    return;
   }
-  </script>
-</body>
-    
-    <div class="card">Pulsa</div>
-    <div class="card">Token PLN</div>
-    <div class="card">E-Wallet</div>
-    <div class="card">Laporan</div>
-  </div>
 
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js');
-    }
-  </script>
+  fetch(GAS_URL,{
+    method:"POST",
+    body:JSON.stringify({
+      jenis: jenisAktif,
+      produk: produk.value,
+      harga: harga.value
+    })
+  })
+  .then(r=>r.json())
+  .then(()=>{
+    alert("Transaksi tersimpan");
+    produk.value="";
+    harga.value="";
+  });
+}
+
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js');
+}
+</script>
+
 </body>
 </html>
