@@ -65,6 +65,43 @@ header{
   border-bottom:1px solid #eee;
   padding:6px 0;
 }
+  .dashboard{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  padding:0 12px;
+}
+.dashboard .box{
+  background:#fff;
+  border-radius:12px;
+  padding:12px;
+  box-shadow:0 2px 6px rgba(0,0,0,.1);
+}
+.dashboard small{
+  color:#777;
+}
+.dashboard h2{
+  margin:4px 0 0;
+  color:#0d6efd;
+}
+.bottom-nav{
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  background:#fff;
+  display:flex;
+  border-top:1px solid #ddd;
+}
+.bottom-nav div{
+  flex:1;
+  text-align:center;
+  padding:10px 0;
+  font-size:13px;
+}
+body{
+  padding-bottom:60px;
+}
 </style>
 </head>
 
@@ -80,7 +117,19 @@ header{
   <div class="card" onclick="bukaLaporan(this)">Laporan</div>
 </div>
 
-<!-- FORM TRANSAKSI -->
+  <!-- DASHBOARD -->
+<div class="dashboard">
+  <div class="box">
+    <small>Total Transaksi</small>
+    <h2 id="totalTransaksi">-</h2>
+  </div>
+  <div class="box">
+    <small>Total Untung</small>
+    <h2 id="totalUntung">Rp -</h2>
+  </div>
+</div>
+
+  <!-- FORM TRANSAKSI -->
 <div class="form" id="formTransaksi">
   <h3 id="judul">Input Pulsa</h3>
   <input id="produk" placeholder="Nama Produk">
@@ -177,6 +226,9 @@ function aktifkan(el){
   el.classList.add('active');
 }
 </script>
-
+<div class="bottom-nav">
+  <div onclick="bukaTransaksi('Pulsa',this)">🏠<br>Kasir</div>
+  <div onclick="bukaLaporan(this)">📊<br>Laporan</div>
+</div>
 </body>
 </html>
