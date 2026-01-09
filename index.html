@@ -129,7 +129,34 @@ function simpan(){
     alert("Lengkapi data");
     return;
   }
+function bukaLaporan(el){
+  document.querySelectorAll('.menu .card')
+    .forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
 
+  document.querySelector('.form').style.display="none";
+  laporan.style.display="block";
+
+  fetch(GAS_URL)
+    .then(r=>r.json())
+    .then(data=>{
+      let html="";
+      let total=0;
+
+      data.forEach(d=>{
+        html += `
+          <div style="border-bottom:1px solid #ddd;padding:6px 0">
+            <b>${d[2]}</b><br>
+            ${d[1]} | Untung: Rp ${d[5]}
+          </div>
+        `;
+        total += Number(d[5]);
+      });
+
+      isiLaporan.innerHTML =
+        html + `<hr><b>Total Untung: Rp ${total}</b>`;
+    });
+}
   fetch(GAS_URL,{
     method:"POST",
     body:JSON.stringify({
