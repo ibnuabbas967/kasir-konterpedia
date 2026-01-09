@@ -36,6 +36,35 @@
       box-shadow: 0 2px 6px rgba(0,0,0,.1);
       cursor: pointer;
     }
+    .form {
+  background: #fff;
+  margin: 12px;
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,.1);
+}
+
+.form h3 {
+  margin-top: 0;
+}
+
+.form input, .form select {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+.form button {
+  width: 100%;
+  padding: 12px;
+  background: #0d6efd;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: bold;
+}
   </style>
 </head>
 
@@ -43,6 +72,54 @@
   <header>Kasir Konterpedia</header>
 
   <div class="menu">
+<body>
+  <header>Kasir Konterpedia</header>
+
+  <div class="menu">
+    <div class="card">Pulsa</div>
+    <div class="card">Token PLN</div>
+    <div class="card">E-Wallet</div>
+    <div class="card">Laporan</div>
+  </div>
+
+  <!-- FORM TRANSAKSI -->
+  <div class="form">
+    <h3>Input Transaksi</h3>
+
+    <select id="jenis">
+      <option value="Pulsa">Pulsa</option>
+      <option value="Token">Token PLN</option>
+      <option value="Ewallet">E-Wallet</option>
+    </select>
+
+    <input id="produk" placeholder="Nama Produk">
+    <input id="harga" type="number" placeholder="Harga">
+
+    <button onclick="simpan()">Simpan Transaksi</button>
+  </div>
+
+  <script>
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbwShdpVDF7Yjx8Sk7g7GYKsnMz1ps-RS5DdzPoOlBuQJsyKrdfzL3ahobbwfwPGOpyY/exec";
+
+  function simpan(){
+    fetch(GAS_URL,{
+      method:"POST",
+      body: JSON.stringify({
+        jenis: document.getElementById('jenis').value,
+        produk: document.getElementById('produk').value,
+        harga: document.getElementById('harga').value
+      })
+    })
+    .then(r=>r.json())
+    .then(()=>{
+      alert("Transaksi tersimpan");
+      produk.value="";
+      harga.value="";
+    });
+  }
+  </script>
+</body>
+    
     <div class="card">Pulsa</div>
     <div class="card">Token PLN</div>
     <div class="card">E-Wallet</div>
@@ -55,38 +132,4 @@
     }
   </script>
 </body>
-</html><div style="padding:12px">
-  <h3>Input Transaksi</h3>
-
-  <select id="jenis">
-    <option>Pulsa</option>
-    <option>Token PLN</option>
-    <option>E-Wallet</option>
-  </select><br><br>
-
-  <input id="produk" placeholder="Produk"><br><br>
-  <input id="harga" type="number" placeholder="Harga"><br><br>
-
-  <button onclick="simpan()">Simpan</button>
-</div>
-
-<script>
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwShdpVDF7Yjx8Sk7g7GYKsnMz1ps-RS5DdzPoOlBuQJsyKrdfzL3ahobbwfwPGOpyY/exec";
-
-function simpan(){
-  fetch(GAS_URL,{
-    method:"POST",
-    body:JSON.stringify({
-      jenis: jenis.value,
-      produk: produk.value,
-      harga: harga.value
-    })
-  })
-  .then(r=>r.json())
-  .then(()=>{
-    alert("Transaksi tersimpan");
-    produk.value="";
-    harga.value="";
-  });
-}
-</script>
+</html>
