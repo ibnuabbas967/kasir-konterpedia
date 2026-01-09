@@ -104,7 +104,8 @@ header{
   <h3 id="judul">Input Pulsa</h3>
 
   <input id="produk" placeholder="Nama Produk (ex: Telkomsel 10K)">
-  <input id="harga" type="number" placeholder="Harga Jual">
+<input id="modal" type="number" placeholder="Modal">
+<input id="harga" type="number" placeholder="Harga Jual">
 
   <button onclick="simpan()">Simpan Transaksi</button>
 </div>
@@ -121,7 +122,7 @@ function setJenis(jenis,el){
 }
 
 function simpan(){
-  if(!produk.value || !harga.value){
+  if(!produk.value || !modal.value || !harga.value){
     alert("Lengkapi data");
     return;
   }
@@ -131,13 +132,15 @@ function simpan(){
     body:JSON.stringify({
       jenis: jenisAktif,
       produk: produk.value,
-      harga: harga.value
+      modal: Number(modal.value),
+      harga: Number(harga.value)
     })
   })
   .then(r=>r.json())
   .then(()=>{
     alert("Transaksi tersimpan");
     produk.value="";
+    modal.value="";
     harga.value="";
   });
 }
