@@ -5,17 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Kasir Konterpedia</title>
 
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0d6efd">
-
 <style>
 body{
   margin:0;
   font-family:system-ui,sans-serif;
   background:#f4f6f8;
 }
-
-/* HEADER */
 header{
   background:#0d6efd;
   color:#fff;
@@ -24,8 +19,6 @@ header{
   font-size:18px;
   font-weight:700;
 }
-
-/* MENU */
 .menu{
   display:grid;
   grid-template-columns:repeat(4,1fr);
@@ -40,14 +33,11 @@ header{
   font-size:13px;
   font-weight:600;
   box-shadow:0 2px 6px rgba(0,0,0,.1);
-  cursor:pointer;
 }
-.menu .card.active{
+.menu .active{
   background:#0d6efd;
   color:#fff;
 }
-
-/* FORM */
 .form{
   background:#fff;
   margin:12px;
@@ -55,17 +45,12 @@ header{
   border-radius:12px;
   box-shadow:0 2px 6px rgba(0,0,0,.1);
 }
-.form h3{
-  margin:0 0 10px;
-}
-.form select,
 .form input{
   width:100%;
   padding:10px;
   margin-bottom:10px;
   border-radius:8px;
   border:1px solid #ccc;
-  font-size:14px;
 }
 .form button{
   width:100%;
@@ -75,14 +60,10 @@ header{
   border:none;
   border-radius:10px;
   font-weight:700;
-  font-size:15px;
 }
-
-/* RESPONSIVE */
-@media(max-width:400px){
-  .menu{
-    grid-template-columns:repeat(2,1fr);
-  }
+.item{
+  border-bottom:1px solid #eee;
+  padding:6px 0;
 }
 </style>
 </head>
@@ -93,49 +74,45 @@ header{
 
 <!-- MENU -->
 <div class="menu">
-  <div class="card active" onclick="setJenis('Pulsa',this)">Pulsa</div>
-  <div class="card" onclick="setJenis('Token PLN',this)">Token PLN</div>
-  <div class="card" onclick="setJenis('E-Wallet',this)">E-Wallet</div>
+  <div class="card active" onclick="bukaTransaksi('Pulsa',this)">Pulsa</div>
+  <div class="card" onclick="bukaTransaksi('Token PLN',this)">Token PLN</div>
+  <div class="card" onclick="bukaTransaksi('E-Wallet',this)">E-Wallet</div>
   <div class="card" onclick="bukaLaporan(this)">Laporan</div>
 </div>
 
 <!-- FORM TRANSAKSI -->
-<div class="form">
+<div class="form" id="formTransaksi">
   <h3 id="judul">Input Pulsa</h3>
-
-  <input id="produk" placeholder="Nama Produk (ex: Telkomsel 10K)">
-<input id="modal" type="number" placeholder="Modal">
-<input id="harga" type="number" placeholder="Harga Jual">
-
+  <input id="produk" placeholder="Nama Produk">
+  <input id="modal" type="number" placeholder="Modal">
+  <input id="harga" type="number" placeholder="Harga Jual">
   <button onclick="simpan()">Simpan Transaksi</button>
 </div>
-<div class="form" id="laporan" style="display:none">
-  <h3>Laporan Hari Ini</h3>
+
+<!-- LAPORAN -->
+<div class="form" id="formLaporan" style="display:none">
+  <h3>Laporan Transaksi</h3>
   <div id="isiLaporan">Loading...</div>
 </div>
-<script>
-let jenisAktif = "Pulsa";
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwShdpVDF7Yjx8Sk7g7GYKsnMz1ps-RS5DdzPoOlBuQJsyKrdfzL3ahobbwfwPGOpyY/exec";
 
-function setJenis(jenis,el){
+<script>
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwShdpVDF7Yjx8Sk7g7GYKsnMz1ps-RS5DdzPoOlBuQJsyKrdfzL3ahobbwfwPGOpyY/exec";
+let jenisAktif = "Pulsa";
+
+/* MENU TRANSAKSI */
+function bukaTransaksi(jenis,el){
   jenisAktif = jenis;
   document.getElementById('judul').innerText = "Input " + jenis;
-  document.querySelectorAll('.menu .card').forEach(c=>c.classList.remove('active'));
-  el.classList.add('active');
+  document.getElementById('formTransaksi').style.display="block";
+  document.getElementById('formLaporan').style.display="none";
+  aktifkan(el);
 }
 
-function simpan(){
-  if(!produk.value || !modal.value || !harga.value){
-    alert("Lengkapi data");
-    return;
-  }
+/* MENU LAPORAN */
 function bukaLaporan(el){
-  document.querySelectorAll('.menu .card')
-    .forEach(c=>c.classList.remove('active'));
-  el.classList.add('active');
-
-  document.querySelector('.form').style.display="none";
-  laporan.style.display="block";
+  document.getElementById('formTransaksi').style.display="none";
+  document.getElementById('formLaporan').style.display="block";
+  aktifkan(el);
 
   fetch(GAS_URL)
     .then(r=>r.json())
@@ -145,11 +122,10 @@ function bukaLaporan(el){
 
       data.forEach(d=>{
         html += `
-          <div style="border-bottom:1px solid #ddd;padding:6px 0">
+          <div class="item">
             <b>${d[2]}</b><br>
             ${d[1]} | Untung: Rp ${d[5]}
-          </div>
-        `;
+          </div>`;
         total += Number(d[5]);
       });
 
@@ -157,17 +133,24 @@ function bukaLaporan(el){
         html + `<hr><b>Total Untung: Rp ${total}</b>`;
     });
 }
+
+/* SIMPAN TRANSAKSI */
+function simpan(){
+  if(!produk.value || !modal.value || !harga.value){
+    alert("Lengkapi data");
+    return;
+  }
+
   fetch(GAS_URL,{
     method:"POST",
     body:JSON.stringify({
       jenis: jenisAktif,
       produk: produk.value,
       modal: Number(modal.value),
-      harga: Number(harga.value)
+      harga: Number(harga.value),
+      untung: harga.value - modal.value
     })
-  })
-  .then(r=>r.json())
-  .then(()=>{
+  }).then(()=>{
     alert("Transaksi tersimpan");
     produk.value="";
     modal.value="";
@@ -175,8 +158,11 @@ function bukaLaporan(el){
   });
 }
 
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('sw.js');
+/* AKTIFKAN MENU */
+function aktifkan(el){
+  document.querySelectorAll('.menu .card')
+    .forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
 }
 </script>
 
