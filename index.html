@@ -1,58 +1,35 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kasir Konterpedia</title>
+<div style="padding:12px">
+  <h3>Input Transaksi</h3>
 
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0d6efd">
+  <select id="jenis">
+    <option>Pulsa</option>
+    <option>Token PLN</option>
+    <option>E-Wallet</option>
+  </select><br><br>
 
-  <style>
-    body {
-      margin: 0;
-      font-family: system-ui, sans-serif;
-      background: #f4f6f8;
-    }
-    header {
-      background: #0d6efd;
-      color: #fff;
-      padding: 14px;
-      text-align: center;
-      font-weight: bold;
-    }
-    .menu {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-      padding: 12px;
-    }
-    .card {
-      background: #fff;
-      border-radius: 12px;
-      padding: 20px;
-      text-align: center;
-      font-weight: 600;
-      box-shadow: 0 2px 6px rgba(0,0,0,.1);
-      cursor: pointer;
-    }
-  </style>
-</head>
+  <input id="produk" placeholder="Produk"><br><br>
+  <input id="harga" type="number" placeholder="Harga"><br><br>
 
-<body>
-  <header>Kasir Konterpedia</header>
+  <button onclick="simpan()">Simpan</button>
+</div>
 
-  <div class="menu">
-    <div class="card">Pulsa</div>
-    <div class="card">Token PLN</div>
-    <div class="card">E-Wallet</div>
-    <div class="card">Laporan</div>
-  </div>
+<script>
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwShdpVDF7Yjx8Sk7g7GYKsnMz1ps-RS5DdzPoOlBuQJsyKrdfzL3ahobbwfwPGOpyY/exec";
 
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js');
-    }
-  </script>
-</body>
-</html>
+function simpan(){
+  fetch(GAS_URL,{
+    method:"POST",
+    body:JSON.stringify({
+      jenis: jenis.value,
+      produk: produk.value,
+      harga: harga.value
+    })
+  })
+  .then(r=>r.json())
+  .then(()=>{
+    alert("Transaksi tersimpan");
+    produk.value="";
+    harga.value="";
+  });
+}
+</script>
