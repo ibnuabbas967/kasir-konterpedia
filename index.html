@@ -96,7 +96,7 @@ header{
   <div class="card active" onclick="setJenis('Pulsa',this)">Pulsa</div>
   <div class="card" onclick="setJenis('Token PLN',this)">Token PLN</div>
   <div class="card" onclick="setJenis('E-Wallet',this)">E-Wallet</div>
-  <div class="card" onclick="alert('Coming soon')">Laporan</div>
+  <div class="card" onclick="bukaLaporan(this)">Laporan</div>
 </div>
 
 <!-- FORM TRANSAKSI -->
@@ -109,7 +109,10 @@ header{
 
   <button onclick="simpan()">Simpan Transaksi</button>
 </div>
-
+<div class="form" id="laporan" style="display:none">
+  <h3>Laporan Hari Ini</h3>
+  <div id="isiLaporan">Loading...</div>
+</div>
 <script>
 let jenisAktif = "Pulsa";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbwShdpVDF7Yjx8Sk7g7GYKsnMz1ps-RS5DdzPoOlBuQJsyKrdfzL3ahobbwfwPGOpyY/exec";
