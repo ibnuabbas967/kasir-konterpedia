@@ -114,9 +114,17 @@ function bukaLaporan(el){
   document.getElementById('formLaporan').style.display="block";
   aktifkan(el);
 
+  isiLaporan.innerHTML = "Memuat data...";
+
   fetch(GAS_URL)
-    .then(r=>r.json())
-    .then(data=>{
+    .then(r => r.json())
+    .then(data => {
+      if(!Array.isArray(data) || data.length === 0){
+        isiLaporan.innerHTML = 
+          "<i>Belum ada data laporan.</i>";
+        return;
+      }
+
       let html="";
       let total=0;
 
@@ -131,6 +139,10 @@ function bukaLaporan(el){
 
       isiLaporan.innerHTML =
         html + `<hr><b>Total Untung: Rp ${total}</b>`;
+    })
+    .catch(()=>{
+      isiLaporan.innerHTML = 
+        "<i>Laporan belum aktif. Nyalakan backend saat listrik normal.</i>";
     });
 }
 
