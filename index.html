@@ -38,7 +38,6 @@ body{padding-bottom:60px;}
   <div class="card" onclick="showForm('laporan',this)">Laporan</div>
 </div>
 
-<!-- FORM TRANSAKSI -->
 <div class="form" id="formTransaksi">
   <h3>Transaksi</h3>
   <label>Kategori</label>
@@ -58,7 +57,6 @@ body{padding-bottom:60px;}
   <button onclick="simpanTransaksi()">Simpan</button>
 </div>
 
-<!-- FORM PRODUK -->
 <div class="form" id="formProduk" style="display:none">
   <h3>Kelola Produk</h3>
   <label>Kategori</label>
@@ -78,7 +76,6 @@ body{padding-bottom:60px;}
   <div id="notifProduk"></div>
 </div>
 
-<!-- FORM LAPORAN -->
 <div class="form" id="formLaporan" style="display:none">
   <h3>Laporan</h3>
   <div id="isiLaporan"><i>Laporan akan muncul di sini</i></div>
@@ -92,22 +89,18 @@ body{padding-bottom:60px;}
 </div>
 
 <script>
-// ===== MENU SWITCH =====
 function showForm(id,el){
   document.querySelectorAll('.menu .card').forEach(c=>c.classList.remove('active'));
-  document.querySelectorAll('.bottom-nav div').forEach(c=>c.classList.remove('active'));
   if(el) el.classList.add('active');
-
   document.getElementById('formTransaksi').style.display='none';
   document.getElementById('formProduk').style.display='none';
   document.getElementById('formLaporan').style.display='none';
-
   if(id==='transaksi') document.getElementById('formTransaksi').style.display='block';
   if(id==='produk') document.getElementById('formProduk').style.display='block';
   if(id==='laporan') document.getElementById('formLaporan').style.display='block';
 }
 
-// ===== TRANSAKSI =====
+// TRANSAKSI
 function updateProduk(){
   const kategori = document.getElementById("kategori").value;
   const produk = document.getElementById("produk");
@@ -119,7 +112,6 @@ function updateProduk(){
   if(!kategori) return;
 
   google.script.run.withSuccessHandler(function(data){
-    // filter sesuai kategori
     data.filter(p=>p[0]===kategori).forEach((p,i)=>{
       produk.innerHTML += `<option value="${i}" data-nominal="${p[2]}" data-modal="${p[3]}">${p[1]}</option>`;
     });
@@ -153,7 +145,7 @@ function simpanTransaksi(){
   }).simpanTransaksi(data);
 }
 
-// ===== PRODUK =====
+// PRODUK
 function tambahProduk(){
   const kategori = document.getElementById("kategoriBaru").value;
   const nama = document.getElementById("namaProduk").value;
@@ -174,7 +166,7 @@ function tambahProduk(){
   }).tambahProduk(kategori,nama,nominal,modal);
 }
 
-// ===== LAPORAN =====
+// LAPORAN
 function refreshLaporan(){
   google.script.run.withSuccessHandler(function(data){
     if(data.length<=1){
