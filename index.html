@@ -29,7 +29,7 @@
     .form-control,.form-select{border-radius:14px;}
     .table{vertical-align:middle;}
 
-    /* Anti “sidebar ilang” akibat DataTables melebar */
+    /* Anti layout melebar akibat DataTables */
     .table-responsive { overflow-x:auto; }
     table.dataTable { width:100% !important; }
     .dataTables_wrapper { width:100% !important; overflow-x:auto; }
@@ -73,6 +73,10 @@
     <div class="small muted">
       Status: <span id="syncStatus">Belum load</span><br>
       Storage: <span id="storageStatus">Google Sheets</span>
+    </div>
+
+    <div class="small muted mt-3">
+      Tips: kalau habis input data, klik <b>Reload Sheets</b> untuk refresh.
     </div>
   </aside>
 
@@ -406,7 +410,12 @@
             <div class="fw-bold">Pengaturan</div>
             <hr>
             <div class="small muted">
-              Sumber data: Google Sheets via Apps Script WebApp.
+              <div><b>WebApp URL:</b></div>
+              <div class="text-break"><code id="cfgUrl"></code></div>
+              <hr>
+              <div>
+                Kalau “Simpan” masih error di hosting tertentu, pastikan Apps Script deploy access = <b>Anyone</b>.
+              </div>
             </div>
           </div>
         </div>
@@ -459,13 +468,24 @@ async function apiGet(action){
   if(!data.ok) throw new Error(data.error || "API GET error");
   return data;
 }
+
+// FIX POST (anti Failed to fetch + preflight)
 async function apiPost(payload){
   const res = await fetch(WEBAPP_URL, {
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
+    method: "POST",
+    mode: "cors",
+    redirect: "follow",
+    headers: {
+      "Content-Type": "text/plain;charset=utf-8"
+    },
     body: JSON.stringify({ ...payload, token: API_TOKEN })
   });
-  const data = await res.json();
+
+  const text = await res.text();
+  let data;
+  try { data = JSON.parse(text); }
+  catch(e){ throw new Error("Balasan bukan JSON: " + text); }
+
   if(!data.ok) throw new Error(data.error || "API POST error");
   return data;
 }
@@ -513,7 +533,7 @@ function showView(v){
     trx:["Transaksi","Input pemasukan & pengeluaran ke cash/bank."],
     debt:["Hutang & Piutang","Catat hutang/piutang dan pembayaran/cicilan."],
     report:["Laporan","Filter bulan dan lihat ringkasan transaksi."],
-    settings:["Pengaturan","Konfigurasi & info."]
+    settings:["Pengaturan","Info konfigurasi WebApp."]
   };
   document.getElementById("pageTitle").textContent = titleMap[v][0];
   document.getElementById("pageDesc").textContent  = titleMap[v][1];
@@ -709,7 +729,7 @@ function refreshAll(){
   SYNC
 ========================================================= */
 async function loadFromSheets(){
-  if(!WEBAPP_URL) {
+  if(!WEBAPP_URL){
     setStatus("WEBAPP_URL kosong", false);
     return;
   }
@@ -744,6 +764,7 @@ async function deleteTrx(id){
   await del("trx", id);
   await loadFromSheets();
 }
+
 async function deleteDebt(id){
   if(!confirm("Hapus hutang/piutang ini dari Sheets?")) return;
   setStatus("Menghapus...");
@@ -774,6 +795,8 @@ async function addPayment({debtId, date, account, amount}){
   INIT
 ========================================================= */
 document.addEventListener("DOMContentLoaded", async () => {
+  document.getElementById("cfgUrl").textContent = WEBAPP_URL;
+
   document.getElementById("trxDate").value = todayISO();
   document.getElementById("debtDate").value = todayISO();
   document.getElementById("payDate").value = todayISO();
