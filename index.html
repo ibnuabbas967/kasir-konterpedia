@@ -1,189 +1,885 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kasir Konterpedia</title>
-<style>
-body{margin:0;font-family:system-ui,sans-serif;background:#f4f6f8;}
-header{background:#0d6efd;color:#fff;padding:14px;text-align:center;font-size:18px;font-weight:700;}
-.menu{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:12px;}
-.menu .card{background:#fff;border-radius:12px;padding:12px 5px;text-align:center;font-size:13px;font-weight:600;box-shadow:0 2px 6px rgba(0,0,0,.1);}
-.menu .active{background:#0d6efd;color:#fff;}
-.form{background:#fff;margin:12px;padding:15px;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,.1);animation:fade .2s ease;}
-.form input, .form select{width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #ccc;}
-.form button{width:100%;padding:12px;background:#0d6efd;color:#fff;border:none;border-radius:10px;font-weight:700;transition:transform .1s ease;}
-.form button:active{transform:scale(.97);}
-@keyframes fade{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
-.laporan-wrap{padding:12px;}
-.laporan-total{background:linear-gradient(135deg,#0d6efd,#4dabf7);color:#fff;padding:18px;border-radius:16px;margin-bottom:12px;}
-.laporan-total small{opacity:.9;}
-.laporan-total h1{margin:6px 0 0;font-size:28px;}
-.laporan-list{background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,.08);}
-.laporan-item{display:flex;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #eee;}
-.laporan-item:last-child{border-bottom:none;}
-.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;display:flex;border-top:1px solid #ddd;}
-.bottom-nav div{flex:1;text-align:center;padding:10px 0;font-size:13px;transition:transform .1s ease;}
-.bottom-nav div:active{transform:scale(.96);}
-body{padding-bottom:60px;}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>💰 WebApp Keuangan (Sync Sheets)</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://cdn.datatables.net/v/bs5/dt-2.1.8/datatables.min.css" rel="stylesheet"/>
+
+  <style>
+    :root{--bg:#f6f7fb;--card:#fff;--muted:#6c757d;--ink:#111827;--radius:18px;}
+    html,body{overflow-x:hidden;}
+    body{background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;}
+    .sidebar{width:280px;background:linear-gradient(180deg,#0b1220,#0b1220 40%,#0f172a);color:#e5e7eb;position:sticky;top:0;height:100vh;padding:16px;border-right:1px solid rgba(255,255,255,.08);}
+    .brand{display:flex;align-items:center;gap:10px;padding:10px 10px 14px 10px;}
+    .brand .logo{width:40px;height:40px;border-radius:14px;display:grid;place-items:center;background:rgba(255,255,255,.12);}
+    .nav-pill{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;color:#e5e7eb;text-decoration:none;transition:.15s;}
+    .nav-pill:hover{background:rgba(255,255,255,.08);color:#fff;}
+    .nav-pill.active{background:rgba(99,102,241,.22);border:1px solid rgba(99,102,241,.35);}
+    .content{padding:18px;}
+    .card-soft{background:var(--card);border:0;border-radius:var(--radius);box-shadow:0 8px 30px rgba(15,23,42,.06);}
+    .kpi{border-radius:var(--radius);background:radial-gradient(1000px 300px at 10% 0%, rgba(99,102,241,.22), transparent 40%),radial-gradient(1000px 300px at 90% 0%, rgba(16,185,129,.18), transparent 40%),#0b1220;color:#e5e7eb;}
+    .kpi small{color:rgba(229,231,235,.75)}
+    .money{font-weight:800;}
+    .muted{color:var(--muted)}
+    .btn-pill{border-radius:999px}
+    .form-control,.form-select{border-radius:14px;}
+    .table{vertical-align:middle;}
+
+    /* Anti “sidebar ilang” akibat DataTables melebar */
+    .table-responsive { overflow-x:auto; }
+    table.dataTable { width:100% !important; }
+    .dataTables_wrapper { width:100% !important; overflow-x:auto; }
+
+    @media (max-width: 992px){
+      .sidebar{position:fixed;left:-290px;z-index:1050;transition:.2s;}
+      .sidebar.open{left:0;}
+      .content{padding:14px;}
+    }
+  </style>
 </head>
+
 <body>
+<div class="d-flex" style="min-height:100vh">
 
-<header>Kasir Konterpedia</header>
+  <aside id="sidebar" class="sidebar">
+    <div class="brand">
+      <div class="logo"><i class="bi bi-wallet2 fs-5"></i></div>
+      <div>
+        <div class="fw-bold">Keuangan</div>
+        <small class="muted">Sync Google Sheets</small>
+      </div>
+    </div>
 
-<div class="menu">
-  <div class="card active" onclick="showForm('transaksi',this)">Transaksi</div>
-  <div class="card" onclick="showForm('produk',this)">Produk</div>
-  <div class="card" onclick="showForm('laporan',this)">Laporan</div>
+    <div class="d-grid gap-2 mb-3">
+      <button class="btn btn-light btn-pill d-lg-none" id="btnCloseSidebar">
+        <i class="bi bi-x-lg"></i> Tutup Menu
+      </button>
+    </div>
+
+    <nav class="d-grid gap-1">
+      <a href="#" class="nav-pill active" data-view="dash"><i class="bi bi-speedometer2"></i> Dashboard</a>
+      <a href="#" class="nav-pill" data-view="trx"><i class="bi bi-arrow-left-right"></i> Transaksi</a>
+      <a href="#" class="nav-pill" data-view="debt"><i class="bi bi-journal-text"></i> Hutang & Piutang</a>
+      <a href="#" class="nav-pill" data-view="report"><i class="bi bi-graph-up"></i> Laporan</a>
+      <a href="#" class="nav-pill" data-view="settings"><i class="bi bi-gear"></i> Pengaturan</a>
+    </nav>
+
+    <hr class="border-light opacity-25 my-3">
+
+    <div class="small muted">
+      Status: <span id="syncStatus">Belum load</span><br>
+      Storage: <span id="storageStatus">Google Sheets</span>
+    </div>
+  </aside>
+
+  <main class="flex-grow-1">
+    <div class="content">
+
+      <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
+        <div class="d-flex align-items-center gap-2">
+          <button class="btn btn-dark btn-pill d-lg-none" id="btnOpenSidebar">
+            <i class="bi bi-list"></i>
+          </button>
+          <div>
+            <div class="fw-bold" id="pageTitle">Dashboard</div>
+            <div class="small muted" id="pageDesc">Ringkasan saldo dan aktivitas terbaru.</div>
+          </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+          <button class="btn btn-outline-dark btn-pill" id="btnReload">
+            <i class="bi bi-arrow-clockwise"></i> Reload Sheets
+          </button>
+          <button class="btn btn-outline-danger btn-pill" id="btnResetAll">
+            <i class="bi bi-trash3"></i> Kosongkan Sheets
+          </button>
+        </div>
+      </div>
+
+      <!-- DASH -->
+      <section id="view-dash">
+        <div class="row g-3">
+          <div class="col-12">
+            <div class="card card-soft kpi">
+              <div class="card-body p-4">
+                <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+                  <div>
+                    <small>Saldo Cash</small>
+                    <div class="money fs-2" id="kpiCash">Rp 0</div>
+                    <div class="small muted">Uang tunai</div>
+                  </div>
+                  <div>
+                    <small>Saldo Bank</small>
+                    <div class="money fs-2" id="kpiBank">Rp 0</div>
+                    <div class="small muted">Rekening / e-wallet</div>
+                  </div>
+                  <div>
+                    <small>Total Aset Likuid</small>
+                    <div class="money fs-2" id="kpiTotal">Rp 0</div>
+                    <div class="small muted">Cash + Bank</div>
+                  </div>
+                </div>
+
+                <hr class="border-light opacity-25 my-4">
+
+                <div class="row g-3">
+                  <div class="col-md-4">
+                    <div class="p-3 rounded-4" style="background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.10)">
+                      <small>Pemasukan (bulan ini)</small>
+                      <div class="money fs-4" id="kpiIncomeMonth">Rp 0</div>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="p-3 rounded-4" style="background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.10)">
+                      <small>Pengeluaran (bulan ini)</small>
+                      <div class="money fs-4" id="kpiExpenseMonth">Rp 0</div>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="p-3 rounded-4" style="background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.10)">
+                      <small>Profit Kotor (bulan ini)</small>
+                      <div class="money fs-4" id="kpiProfitMonth">Rp 0</div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-7">
+            <div class="card card-soft">
+              <div class="card-body p-4">
+                <div class="fw-bold mb-2">Transaksi Terbaru</div>
+                <div class="table-responsive">
+                  <table class="table table-sm" id="tblRecent">
+                    <thead>
+                      <tr>
+                        <th>Tanggal</th><th>Jenis</th><th>Akun</th><th>Keterangan</th><th class="text-end">Nominal</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+                <div class="small muted">Sumber data: Google Sheets.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-5">
+            <div class="card card-soft">
+              <div class="card-body p-4">
+                <div class="fw-bold mb-2">Hutang & Piutang Aktif</div>
+                <div class="table-responsive">
+                  <table class="table table-sm" id="tblDebtMini">
+                    <thead>
+                      <tr><th>Jenis</th><th>Nama</th><th class="text-end">Sisa</th><th>Status</th></tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+                <div class="small muted">Bayar/cicil di menu Hutang & Piutang.</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- TRX -->
+      <section id="view-trx" class="d-none">
+        <div class="row g-3">
+          <div class="col-lg-4">
+            <div class="card card-soft">
+              <div class="card-body p-4">
+                <div class="fw-bold mb-3">Tambah Transaksi</div>
+
+                <form id="frmTrx" class="d-grid gap-2">
+                  <div>
+                    <label class="form-label">Tanggal</label>
+                    <input type="date" class="form-control" id="trxDate" required>
+                  </div>
+                  <div>
+                    <label class="form-label">Jenis</label>
+                    <select class="form-select" id="trxType" required>
+                      <option value="income">Pemasukan</option>
+                      <option value="expense">Pengeluaran</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="form-label">Akun</label>
+                    <select class="form-select" id="trxAccount" required>
+                      <option value="cash">Cash</option>
+                      <option value="bank">Bank</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="form-label">Kategori</label>
+                    <input class="form-control" id="trxCategory" placeholder="Penjualan, Modal, Operasional">
+                  </div>
+                  <div>
+                    <label class="form-label">Keterangan</label>
+                    <input class="form-control" id="trxNote" placeholder="Misal: Jual pulsa / Beli stok">
+                  </div>
+                  <div>
+                    <label class="form-label">Nominal</label>
+                    <input type="text" inputmode="numeric" class="form-control" id="trxAmount" placeholder="0" required>
+                  </div>
+                  <button class="btn btn-dark btn-pill mt-2" type="submit">
+                    <i class="bi bi-plus-circle"></i> Simpan ke Sheets
+                  </button>
+                </form>
+
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-8">
+            <div class="card card-soft">
+              <div class="card-body p-4">
+                <div class="fw-bold mb-2">Daftar Transaksi</div>
+                <hr>
+                <div class="table-responsive">
+                  <table class="table" id="tblTrx" style="width:100%">
+                    <thead>
+                      <tr>
+                        <th>Tanggal</th><th>Jenis</th><th>Akun</th><th>Kategori</th><th>Keterangan</th>
+                        <th class="text-end">Nominal</th><th class="text-end">Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+                <div class="small muted mt-2">Hapus = delete di Sheets.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- DEBT -->
+      <section id="view-debt" class="d-none">
+        <div class="row g-3">
+          <div class="col-lg-4">
+            <div class="card card-soft">
+              <div class="card-body p-4">
+                <div class="fw-bold mb-3">Tambah Hutang / Piutang</div>
+
+                <form id="frmDebt" class="d-grid gap-2">
+                  <div>
+                    <label class="form-label">Tanggal</label>
+                    <input type="date" class="form-control" id="debtDate" required>
+                  </div>
+                  <div>
+                    <label class="form-label">Jenis</label>
+                    <select class="form-select" id="debtType" required>
+                      <option value="receivable">Piutang (orang ngutang ke kita)</option>
+                      <option value="payable">Hutang (kita ngutang ke orang)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="form-label">Nama</label>
+                    <input class="form-control" id="debtName" placeholder="Nama pelanggan/supplier" required>
+                  </div>
+                  <div>
+                    <label class="form-label">Keterangan</label>
+                    <input class="form-control" id="debtNote" placeholder="Contoh: Piutang topup">
+                  </div>
+                  <div>
+                    <label class="form-label">Nominal</label>
+                    <input type="text" inputmode="numeric" class="form-control" id="debtAmount" placeholder="0" required>
+                  </div>
+                  <button class="btn btn-dark btn-pill mt-2" type="submit">
+                    <i class="bi bi-plus-circle"></i> Simpan ke Sheets
+                  </button>
+                </form>
+
+                <hr>
+
+                <div class="fw-bold mb-2">Catat Pembayaran / Cicilan</div>
+                <form id="frmPay" class="d-grid gap-2">
+                  <div>
+                    <label class="form-label">Pilih Data</label>
+                    <select class="form-select" id="payDebtId" required></select>
+                  </div>
+                  <div>
+                    <label class="form-label">Tanggal</label>
+                    <input type="date" class="form-control" id="payDate" required>
+                  </div>
+                  <div>
+                    <label class="form-label">Akun Masuk/Keluar</label>
+                    <select class="form-select" id="payAccount" required>
+                      <option value="cash">Cash</option>
+                      <option value="bank">Bank</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="form-label">Nominal Bayar</label>
+                    <input type="text" inputmode="numeric" class="form-control" id="payAmount" placeholder="0" required>
+                  </div>
+                  <button class="btn btn-outline-dark btn-pill" type="submit">
+                    <i class="bi bi-check2-circle"></i> Simpan Pembayaran (Sync)
+                  </button>
+                </form>
+
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-8">
+            <div class="card card-soft">
+              <div class="card-body p-4">
+                <div class="fw-bold">Daftar Hutang & Piutang</div>
+                <hr>
+                <div class="table-responsive">
+                  <table class="table" id="tblDebt" style="width:100%">
+                    <thead>
+                      <tr>
+                        <th>Tanggal</th><th>Jenis</th><th>Nama</th><th>Keterangan</th>
+                        <th class="text-end">Nominal</th><th class="text-end">Terbayar</th><th class="text-end">Sisa</th><th>Status</th>
+                        <th class="text-end">Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+
+                <div class="small muted mt-2">Pembayaran otomatis bikin transaksi cash/bank juga (di tab trx).</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- REPORT (tanpa DataTables biar stabil) -->
+      <section id="view-report" class="d-none">
+        <div class="card card-soft">
+          <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+              <div>
+                <div class="fw-bold">Laporan</div>
+                <div class="small muted">Filter bulan dari data Sheets.</div>
+              </div>
+              <div class="d-flex gap-2 align-items-end">
+                <div>
+                  <label class="form-label small">Bulan</label>
+                  <input type="month" class="form-control" id="repMonth">
+                </div>
+                <button class="btn btn-dark btn-pill" id="btnGenReport">
+                  <i class="bi bi-magic"></i> Generate
+                </button>
+              </div>
+            </div>
+
+            <hr>
+
+            <div class="row g-3">
+              <div class="col-md-4"><div class="p-3 rounded-4 border bg-white"><div class="small muted">Total Pemasukan</div><div class="money fs-4" id="repIncome">Rp 0</div></div></div>
+              <div class="col-md-4"><div class="p-3 rounded-4 border bg-white"><div class="small muted">Total Pengeluaran</div><div class="money fs-4" id="repExpense">Rp 0</div></div></div>
+              <div class="col-md-4"><div class="p-3 rounded-4 border bg-white"><div class="small muted">Profit Kotor</div><div class="money fs-4" id="repProfit">Rp 0</div></div></div>
+            </div>
+
+            <div class="table-responsive mt-3">
+              <table class="table" id="tblRep" style="width:100%">
+                <thead>
+                  <tr>
+                    <th>Tanggal</th><th>Jenis</th><th>Akun</th><th>Kategori</th><th>Keterangan</th>
+                    <th class="text-end">Nominal</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section id="view-settings" class="d-none">
+        <div class="card card-soft">
+          <div class="card-body p-4">
+            <div class="fw-bold">Pengaturan</div>
+            <hr>
+            <div class="small muted">
+              Sumber data: Google Sheets via Apps Script WebApp.
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
 </div>
 
-<div class="form" id="formTransaksi">
-  <h3>Transaksi</h3>
-  <label>Kategori</label>
-  <select id="kategori" onchange="updateProduk()">
-    <option value="">-- Pilih Kategori --</option>
-  </select>
-  <label>Produk</label>
-  <select id="produk" onchange="isiHarga()">
-    <option value="">-- Pilih Produk --</option>
-  </select>
-  <label>Nominal</label>
-  <input type="number" id="nominal" readonly>
-  <label>Modal</label>
-  <input type="number" id="modal" readonly>
-  <label>Untung</label>
-  <input type="number" id="untung">
-  <button onclick="simpanTransaksi()">Simpan</button>
-</div>
-
-<div class="form" id="formProduk" style="display:none">
-  <h3>Kelola Produk</h3>
-  <label>Kategori</label>
-  <select id="kategoriBaru">
-    <option value="">-- Pilih Kategori --</option>
-    <option>Pulsa</option>
-    <option>E-Wallet</option>
-    <option>Token PLN</option>
-  </select>
-  <label>Nama Produk</label>
-  <input type="text" id="namaProduk">
-  <label>Nominal</label>
-  <input type="number" id="nominalProduk">
-  <label>Modal</label>
-  <input type="number" id="modalProduk">
-  <button onclick="tambahProduk()">Simpan Produk</button>
-  <div id="notifProduk"></div>
-</div>
-
-<div class="form" id="formLaporan" style="display:none">
-  <h3>Laporan</h3>
-  <div id="isiLaporan"><i>Laporan akan muncul di sini</i></div>
-  <button onclick="refreshLaporan()">Refresh</button>
-</div>
-
-<div class="bottom-nav">
-  <div onclick="showForm('transaksi',this)">🏠<br>Kasir</div>
-  <div onclick="showForm('produk',this)">🛠<br>Produk</div>
-  <div onclick="showForm('laporan',this)">📊<br>Laporan</div>
-</div>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.datatables.net/v/bs5/dt-2.1.8/datatables.min.js"></script>
 
 <script>
-function showForm(id,el){
-  document.querySelectorAll('.menu .card').forEach(c=>c.classList.remove('active'));
-  if(el) el.classList.add('active');
-  document.getElementById('formTransaksi').style.display='none';
-  document.getElementById('formProduk').style.display='none';
-  document.getElementById('formLaporan').style.display='none';
-  if(id==='transaksi') document.getElementById('formTransaksi').style.display='block';
-  if(id==='produk') document.getElementById('formProduk').style.display='block';
-  if(id==='laporan') document.getElementById('formLaporan').style.display='block';
+/* =========================================================
+  CONFIG (SUDAH DIISI)
+========================================================= */
+const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbweT8pqvxoJjrnYrdZJkurgc5ZaJ80PYMaSJnJFP1ZzYciUGd3Pc8Q42kra5ZRycfi-VA/exec";
+const API_TOKEN = "";
+
+/* =========================================================
+  UTIL
+========================================================= */
+const rupiah = (n) => "Rp " + (Number(n||0)).toLocaleString("id-ID");
+const todayISO = () => new Date().toISOString().slice(0,10);
+const toNumber = (str) => Number(String(str||"").replace(/[^\d]/g,"") || 0);
+const fmtInput = (el) => el.addEventListener("input", () => {
+  const v = toNumber(el.value);
+  el.value = v ? v.toLocaleString("id-ID") : "";
+});
+const uid = () => Math.random().toString(16).slice(2) + Date.now().toString(16);
+
+function setStatus(text, ok=true){
+  const el = document.getElementById("syncStatus");
+  el.textContent = text;
+  el.className = ok ? "text-success" : "text-danger";
 }
 
-// TRANSAKSI
-function updateProduk(){
-  const kategori = document.getElementById("kategori").value;
-  const produk = document.getElementById("produk");
-  produk.innerHTML = '<option value="">-- Pilih Produk --</option>';
-  document.getElementById("nominal").value="";
-  document.getElementById("modal").value="";
-  document.getElementById("untung").value="";
+/* =========================================================
+  API
+========================================================= */
+async function apiGet(action){
+  const url = new URL(WEBAPP_URL);
+  url.searchParams.set("action", action);
+  if(API_TOKEN) url.searchParams.set("token", API_TOKEN);
 
-  if(!kategori) return;
-
-  google.script.run.withSuccessHandler(function(data){
-    data.filter(p=>p[0]===kategori).forEach((p,i)=>{
-      produk.innerHTML += `<option value="${i}" data-nominal="${p[2]}" data-modal="${p[3]}">${p[1]}</option>`;
-    });
-  }).getProduk();
+  const res = await fetch(url.toString(), { method:"GET" });
+  const data = await res.json();
+  if(!data.ok) throw new Error(data.error || "API GET error");
+  return data;
+}
+async function apiPost(payload){
+  const res = await fetch(WEBAPP_URL, {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ ...payload, token: API_TOKEN })
+  });
+  const data = await res.json();
+  if(!data.ok) throw new Error(data.error || "API POST error");
+  return data;
 }
 
-function isiHarga(){
-  const produkEl = document.getElementById("produk");
-  const selected = produkEl.options[produkEl.selectedIndex];
-  if(!selected || selected.value==="") return;
-  document.getElementById("nominal").value = selected.dataset.nominal;
-  document.getElementById("modal").value = selected.dataset.modal;
-  document.getElementById("untung").value = selected.dataset.nominal - selected.dataset.modal;
+/* =========================================================
+  DB (in-memory, source = Sheets)
+========================================================= */
+let db = { trx:[], debts:[], payments:[] };
+let dtTrx = null, dtDebt = null;
+
+function monthKey(d){ return (d||"").slice(0,7); }
+function calcBalances(){
+  let cash=0, bank=0;
+  for(const t of db.trx){
+    const sign = (t.type === "income") ? 1 : -1;
+    const amt = Number(t.amount||0);
+    if(t.account==="cash") cash += sign*amt; else bank += sign*amt;
+  }
+  return {cash, bank, total: cash+bank};
+}
+function monthSummary(ym){
+  let income=0, expense=0;
+  for(const t of db.trx){
+    if(monthKey(t.date) !== ym) continue;
+    const amt = Number(t.amount||0);
+    if(t.type==="income") income += amt; else expense += amt;
+  }
+  return {income, expense, profit: income-expense};
 }
 
-function simpanTransaksi(){
-  const data = {
-    kategori: document.getElementById("kategori").value,
-    produk: document.getElementById("produk").selectedOptions[0].text,
-    nominal: Number(document.getElementById("nominal").value),
-    modal: Number(document.getElementById("modal").value),
-    untung: Number(document.getElementById("untung").value)
+/* =========================================================
+  NAV
+========================================================= */
+const views = ["dash","trx","debt","report","settings"];
+function showView(v){
+  for(const k of views){
+    document.getElementById("view-"+k).classList.toggle("d-none", k!==v);
+  }
+  document.querySelectorAll(".nav-pill").forEach(a=>{
+    a.classList.toggle("active", a.dataset.view===v);
+  });
+
+  const titleMap = {
+    dash:["Dashboard","Ringkasan saldo dan aktivitas terbaru."],
+    trx:["Transaksi","Input pemasukan & pengeluaran ke cash/bank."],
+    debt:["Hutang & Piutang","Catat hutang/piutang dan pembayaran/cicilan."],
+    report:["Laporan","Filter bulan dan lihat ringkasan transaksi."],
+    settings:["Pengaturan","Konfigurasi & info."]
   };
-  google.script.run.withSuccessHandler(function(){
-    alert("Transaksi tersimpan ✔");
-    document.getElementById("kategori").value="";
-    document.getElementById("produk").innerHTML = '<option value="">-- Pilih Produk --</option>';
-    document.getElementById("nominal").value="";
-    document.getElementById("modal").value="";
-    document.getElementById("untung").value="";
-  }).simpanTransaksi(data);
+  document.getElementById("pageTitle").textContent = titleMap[v][0];
+  document.getElementById("pageDesc").textContent  = titleMap[v][1];
+
+  document.getElementById("sidebar").classList.remove("open");
 }
 
-// PRODUK
-function tambahProduk(){
-  const kategori = document.getElementById("kategoriBaru").value;
-  const nama = document.getElementById("namaProduk").value;
-  const nominal = Number(document.getElementById("nominalProduk").value);
-  const modal = Number(document.getElementById("modalProduk").value);
+/* =========================================================
+  RENDER
+========================================================= */
+function renderDashboard(){
+  const b = calcBalances();
+  document.getElementById("kpiCash").textContent = rupiah(b.cash);
+  document.getElementById("kpiBank").textContent = rupiah(b.bank);
+  document.getElementById("kpiTotal").textContent = rupiah(b.total);
 
-  if(!kategori || !nama || !nominal || !modal){
-    alert("Lengkapi data produk!");
+  const ym = monthKey(todayISO());
+  const ms = monthSummary(ym);
+  document.getElementById("kpiIncomeMonth").textContent = rupiah(ms.income);
+  document.getElementById("kpiExpenseMonth").textContent = rupiah(ms.expense);
+  document.getElementById("kpiProfitMonth").textContent = rupiah(ms.profit);
+
+  const recent = [...db.trx].sort((a,b)=> (String(b.date)+b.id).localeCompare(String(a.date)+a.id)).slice(0,8);
+  const tb = document.querySelector("#tblRecent tbody");
+  tb.innerHTML = recent.map(t=>{
+    const badge = t.type==="income"
+      ? `<span class="badge text-bg-success">Masuk</span>`
+      : `<span class="badge text-bg-danger">Keluar</span>`;
+    const acc = t.account==="cash" ? "Cash" : "Bank";
+    return `<tr>
+      <td>${t.date||""}</td>
+      <td>${badge}</td>
+      <td>${acc}</td>
+      <td>${t.note||"-"}</td>
+      <td class="text-end">${rupiah(t.amount)}</td>
+    </tr>`;
+  }).join("") || `<tr><td colspan="5" class="text-center muted py-4">Belum ada transaksi.</td></tr>`;
+
+  const active = db.debts
+    .map(d=>({ ...d, paid:Number(d.paid||0), amount:Number(d.amount||0), sisa: Math.max(0, Number(d.amount||0)-Number(d.paid||0)) }))
+    .filter(d=>d.sisa>0)
+    .sort((a,b)=> b.sisa-a.sisa)
+    .slice(0,8);
+
+  const td = document.querySelector("#tblDebtMini tbody");
+  td.innerHTML = active.map(d=>{
+    const jenis = d.type==="receivable"
+      ? `<span class="badge text-bg-primary">Piutang</span>`
+      : `<span class="badge text-bg-warning">Hutang</span>`;
+    return `<tr>
+      <td>${jenis}</td>
+      <td>${d.name||""}</td>
+      <td class="text-end">${rupiah(d.sisa)}</td>
+      <td><span class="badge text-bg-secondary">Aktif</span></td>
+    </tr>`;
+  }).join("") || `<tr><td colspan="4" class="text-center muted py-4">Tidak ada data aktif.</td></tr>`;
+}
+
+function renderTrxTable(){
+  const rows = [...db.trx].sort((a,b)=> (String(b.date)+b.id).localeCompare(String(a.date)+a.id));
+  const tbody = document.querySelector("#tblTrx tbody");
+  tbody.innerHTML = rows.map(t=>{
+    const jenis = t.type==="income"
+      ? `<span class="badge text-bg-success">Pemasukan</span>`
+      : `<span class="badge text-bg-danger">Pengeluaran</span>`;
+    const akun = t.account==="cash" ? "Cash" : "Bank";
+    return `<tr>
+      <td>${t.date||""}</td>
+      <td>${jenis}</td>
+      <td>${akun}</td>
+      <td>${t.category||"-"}</td>
+      <td>${t.note||"-"}</td>
+      <td class="text-end">${rupiah(t.amount)}</td>
+      <td class="text-end">
+        <button class="btn btn-sm btn-outline-danger btn-pill" onclick="deleteTrx('${t.id}')">
+          <i class="bi bi-trash3"></i>
+        </button>
+      </td>
+    </tr>`;
+  }).join("");
+
+  if ($.fn.dataTable.isDataTable('#tblTrx')) {
+    $('#tblTrx').DataTable().destroy();
+  }
+  dtTrx = $('#tblTrx').DataTable({
+    responsive: false,
+    scrollX: true,
+    pageLength: 10,
+    order: [],
+    language: {
+      search:"Cari:",
+      lengthMenu:"Tampil _MENU_",
+      info:"_START_-_END_ dari _TOTAL_",
+      infoEmpty:"0 data",
+      paginate:{previous:"‹",next:"›"}
+    }
+  });
+}
+
+function renderDebtUI(){
+  const sel = document.getElementById("payDebtId");
+  const items = db.debts
+    .map(d=>({ ...d, amount:Number(d.amount||0), paid:Number(d.paid||0), sisa: Math.max(0, Number(d.amount||0)-Number(d.paid||0)) }))
+    .filter(d=>d.sisa>0)
+    .sort((a,b)=> String(b.date).localeCompare(String(a.date)));
+
+  sel.innerHTML = items.map(d=>{
+    const jenis = d.type==="receivable" ? "Piutang" : "Hutang";
+    return `<option value="${d.id}">${jenis} • ${d.name} • Sisa ${rupiah(d.sisa)}</option>`;
+  }).join("") || `<option value="" disabled selected>Tidak ada data aktif</option>`;
+
+  const rows = db.debts
+    .map(d=>({ ...d, amount:Number(d.amount||0), paid:Number(d.paid||0), sisa: Math.max(0, Number(d.amount||0)-Number(d.paid||0)) }))
+    .sort((a,b)=> (String(b.date)+b.id).localeCompare(String(a.date)+a.id));
+
+  const tbody = document.querySelector("#tblDebt tbody");
+  tbody.innerHTML = rows.map(d=>{
+    const jenis = d.type==="receivable"
+      ? `<span class="badge text-bg-primary">Piutang</span>`
+      : `<span class="badge text-bg-warning">Hutang</span>`;
+    const status = d.sisa<=0 ? `<span class="badge text-bg-success">Lunas</span>` : `<span class="badge text-bg-secondary">Aktif</span>`;
+    return `<tr>
+      <td>${d.date||""}</td>
+      <td>${jenis}</td>
+      <td>${d.name||""}</td>
+      <td>${d.note||"-"}</td>
+      <td class="text-end">${rupiah(d.amount)}</td>
+      <td class="text-end">${rupiah(d.paid)}</td>
+      <td class="text-end">${rupiah(d.sisa)}</td>
+      <td>${status}</td>
+      <td class="text-end">
+        <button class="btn btn-sm btn-outline-danger btn-pill" onclick="deleteDebt('${d.id}')">
+          <i class="bi bi-trash3"></i>
+        </button>
+      </td>
+    </tr>`;
+  }).join("");
+
+  if ($.fn.dataTable.isDataTable('#tblDebt')) {
+    $('#tblDebt').DataTable().destroy();
+  }
+  dtDebt = $('#tblDebt').DataTable({
+    responsive: false,
+    scrollX: true,
+    pageLength: 10,
+    order: [],
+    language: {
+      search:"Cari:",
+      lengthMenu:"Tampil _MENU_",
+      info:"_START_-_END_ dari _TOTAL_",
+      infoEmpty:"0 data",
+      paginate:{previous:"‹",next:"›"}
+    }
+  });
+}
+
+function renderReport(){
+  const ym = document.getElementById("repMonth").value || monthKey(todayISO());
+  const {income,expense,profit} = monthSummary(ym);
+  document.getElementById("repIncome").textContent = rupiah(income);
+  document.getElementById("repExpense").textContent = rupiah(expense);
+  document.getElementById("repProfit").textContent = rupiah(profit);
+
+  const rows = db.trx
+    .filter(t=>monthKey(t.date)===ym)
+    .sort((a,b)=> (String(a.date)+a.id).localeCompare(String(b.date)+b.id));
+
+  const tbody = document.querySelector("#tblRep tbody");
+  tbody.innerHTML = rows.map(t=>{
+    const jenis = t.type==="income"
+      ? `<span class="badge text-bg-success">Masuk</span>`
+      : `<span class="badge text-bg-danger">Keluar</span>`;
+    const akun = t.account==="cash" ? "Cash" : "Bank";
+    return `<tr>
+      <td>${t.date||""}</td>
+      <td>${jenis}</td>
+      <td>${akun}</td>
+      <td>${t.category||"-"}</td>
+      <td>${t.note||"-"}</td>
+      <td class="text-end">${rupiah(t.amount)}</td>
+    </tr>`;
+  }).join("") || `<tr><td colspan="6" class="text-center muted py-4">Tidak ada data di bulan ini.</td></tr>`;
+}
+
+function refreshAll(){
+  renderDashboard();
+  renderTrxTable();
+  renderDebtUI();
+  renderReport();
+}
+
+/* =========================================================
+  SYNC
+========================================================= */
+async function loadFromSheets(){
+  if(!WEBAPP_URL) {
+    setStatus("WEBAPP_URL kosong", false);
     return;
   }
+  setStatus("Loading dari Sheets...");
+  const res = await apiGet("getAll");
+  db = res.data;
 
-  google.script.run.withSuccessHandler(function(){
-    document.getElementById("namaProduk").value="";
-    document.getElementById("nominalProduk").value="";
-    document.getElementById("modalProduk").value="";
-    document.getElementById("notifProduk").innerHTML="Produk berhasil ditambahkan ✔";
-    updateProduk();
-  }).tambahProduk(kategori,nama,nominal,modal);
+  db.trx.forEach(t => t.amount = Number(t.amount||0));
+  db.debts.forEach(d => { d.amount = Number(d.amount||0); d.paid = Number(d.paid||0); });
+  db.payments.forEach(p => p.amount = Number(p.amount||0));
+
+  setStatus("Sinkron ✅", true);
+  refreshAll();
 }
 
-// LAPORAN
-function refreshLaporan(){
-  google.script.run.withSuccessHandler(function(data){
-    if(data.length<=1){
-      document.getElementById("isiLaporan").innerHTML="<i>Tidak ada transaksi</i>";
-      return;
+async function upsert(table, row){
+  await apiPost({ action:"upsertMany", table, rows:[row] });
+}
+async function del(table, id){
+  await apiPost({ action:"deleteById", table, id });
+}
+async function replaceAll(dbNew){
+  await apiPost({ action:"replaceAll", db: dbNew });
+}
+
+/* =========================================================
+  ACTIONS
+========================================================= */
+async function deleteTrx(id){
+  if(!confirm("Hapus transaksi ini dari Sheets?")) return;
+  setStatus("Menghapus...");
+  await del("trx", id);
+  await loadFromSheets();
+}
+async function deleteDebt(id){
+  if(!confirm("Hapus hutang/piutang ini dari Sheets?")) return;
+  setStatus("Menghapus...");
+  await del("debts", id);
+  await loadFromSheets();
+}
+
+async function addPayment({debtId, date, account, amount}){
+  const d = db.debts.find(x=>x.id===debtId);
+  if(!d) throw new Error("Data tidak ditemukan");
+  const sisa = Math.max(0, Number(d.amount||0) - Number(d.paid||0));
+  if(amount > sisa) throw new Error("Nominal bayar melebihi sisa");
+
+  const payment = { id: uid(), debtId, date, account, amount, createdAt: new Date().toISOString() };
+  await upsert("payments", payment);
+
+  const newPaid = Number(d.paid||0) + amount;
+  await upsert("debts", { ...d, paid: newPaid });
+
+  const tType = (d.type==="receivable") ? "income" : "expense";
+  const cat = (d.type==="receivable") ? "Pembayaran Piutang" : "Pembayaran Hutang";
+  const note = `${cat} • ${d.name} • ${d.note||""}`.trim();
+  const trx = { id: uid(), date, type: tType, account, category: cat, note, amount, createdAt: new Date().toISOString() };
+  await upsert("trx", trx);
+}
+
+/* =========================================================
+  INIT
+========================================================= */
+document.addEventListener("DOMContentLoaded", async () => {
+  document.getElementById("trxDate").value = todayISO();
+  document.getElementById("debtDate").value = todayISO();
+  document.getElementById("payDate").value = todayISO();
+  document.getElementById("repMonth").value = monthKey(todayISO());
+
+  ["trxAmount","debtAmount","payAmount"].forEach(id=>fmtInput(document.getElementById(id)));
+
+  document.querySelectorAll(".nav-pill").forEach(a=>{
+    a.addEventListener("click", (e)=>{ e.preventDefault(); showView(a.dataset.view); });
+  });
+
+  document.getElementById("btnOpenSidebar").addEventListener("click", ()=> document.getElementById("sidebar").classList.add("open"));
+  document.getElementById("btnCloseSidebar").addEventListener("click", ()=> document.getElementById("sidebar").classList.remove("open"));
+
+  document.getElementById("btnGenReport").addEventListener("click", renderReport);
+  document.getElementById("btnReload").addEventListener("click", loadFromSheets);
+
+  document.getElementById("btnResetAll").addEventListener("click", async ()=>{
+    if(!confirm("Kosongkan SEMUA data di Sheets?")) return;
+    setStatus("Mengosongkan...");
+    await replaceAll({ trx:[], debts:[], payments:[] });
+    await loadFromSheets();
+  });
+
+  document.getElementById("frmTrx").addEventListener("submit", async (e)=>{
+    e.preventDefault();
+    const row = {
+      id: uid(),
+      date: document.getElementById("trxDate").value || todayISO(),
+      type: document.getElementById("trxType").value,
+      account: document.getElementById("trxAccount").value,
+      category: document.getElementById("trxCategory").value.trim(),
+      note: document.getElementById("trxNote").value.trim(),
+      amount: toNumber(document.getElementById("trxAmount").value),
+      createdAt: new Date().toISOString()
+    };
+    if(row.amount<=0) return alert("Nominal harus > 0");
+    try{
+      setStatus("Menyimpan...");
+      await upsert("trx", row);
+      document.getElementById("trxCategory").value="";
+      document.getElementById("trxNote").value="";
+      document.getElementById("trxAmount").value="";
+      await loadFromSheets();
+    }catch(err){
+      setStatus("Gagal simpan", false);
+      alert(String(err));
     }
-    let html = '<div class="laporan-wrap"><div class="laporan-total"><small>Total Untung</small><h1>';
-    const total = data.slice(1).reduce((acc,row)=>acc + Number(row[5]),0);
-    html += total + '</h1></div>';
-    html += '<div class="laporan-list">';
-    data.slice(1).forEach(row=>{
-      html += `<div class="laporan-item"><b>${row[2]}</b><span>Rp ${row[5]}</span></div>`;
-    });
-    html += '</div></div>';
-    document.getElementById("isiLaporan").innerHTML = html;
-  }).getTransaksi();
-}
+  });
+
+  document.getElementById("frmDebt").addEventListener("submit", async (e)=>{
+    e.preventDefault();
+    const row = {
+      id: uid(),
+      date: document.getElementById("debtDate").value || todayISO(),
+      type: document.getElementById("debtType").value,
+      name: document.getElementById("debtName").value.trim(),
+      note: document.getElementById("debtNote").value.trim(),
+      amount: toNumber(document.getElementById("debtAmount").value),
+      paid: 0,
+      createdAt: new Date().toISOString()
+    };
+    if(!row.name) return alert("Nama wajib diisi");
+    if(row.amount<=0) return alert("Nominal harus > 0");
+    try{
+      setStatus("Menyimpan...");
+      await upsert("debts", row);
+      document.getElementById("debtName").value="";
+      document.getElementById("debtNote").value="";
+      document.getElementById("debtAmount").value="";
+      await loadFromSheets();
+    }catch(err){
+      setStatus("Gagal simpan", false);
+      alert(String(err));
+    }
+  });
+
+  document.getElementById("frmPay").addEventListener("submit", async (e)=>{
+    e.preventDefault();
+    const debtId = document.getElementById("payDebtId").value;
+    if(!debtId) return alert("Tidak ada data aktif.");
+    const date = document.getElementById("payDate").value || todayISO();
+    const account = document.getElementById("payAccount").value;
+    const amount = toNumber(document.getElementById("payAmount").value);
+    if(amount<=0) return alert("Nominal harus > 0");
+
+    try{
+      setStatus("Menyimpan pembayaran...");
+      await addPayment({debtId,date,account,amount});
+      document.getElementById("payAmount").value="";
+      await loadFromSheets();
+    }catch(err){
+      setStatus("Gagal bayar", false);
+      alert(String(err));
+    }
+  });
+
+  showView("dash");
+  try{
+    await loadFromSheets();
+  }catch(err){
+    setStatus("Gagal load", false);
+    console.error(err);
+    alert("Gagal load dari Sheets.\n\n" + String(err));
+  }
+});
 </script>
 
 </body>
