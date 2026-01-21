@@ -39,6 +39,27 @@
       .sidebar.open{left:0;}
       .content{padding:14px;}
     }
+.content{
+  padding-top: 12px;
+}
+
+/* ===== Mobile layout fix: biar konten gak kepotong ===== */
+@media (max-width: 992px){
+  main{width:100%;}
+  .content{width:100%; max-width:100%;}
+  .sidebar{box-shadow: 0 20px 60px rgba(0,0,0,.35);}
+}
+
+/* Saat sidebar terbuka, kasih overlay supaya jelas & scroll tetap aman */
+#overlay{
+  position:fixed; inset:0;
+  background:rgba(0,0,0,.35);
+  z-index:1049;
+  display:none;
+}
+#overlay.show{display:block;}
+
+
   </style>
 </head>
 
@@ -455,8 +476,8 @@ function setStatus(text, ok=true){
   el.className = ok ? "text-success" : "text-danger";
 }
 
-=========================================================
-  Prams
+/* =========================================================
+  API
 ========================================================= */
 function jsonp(url, params = {}) {
   return new Promise((resolve, reject) => {
@@ -488,9 +509,8 @@ function jsonp(url, params = {}) {
     document.body.appendChild(script);
   });
 }
-/* =========================================================
-  API
-========================================================= */
+
+
 async function apiGet(action){
   // 1) coba fetch biasa
   try{
@@ -545,7 +565,6 @@ async function apiPost(payload){
   }
 }
 
-
 /* =========================================================
   DB (in-memory, source = Sheets)
 ========================================================= */
@@ -594,9 +613,11 @@ function showView(v){
   document.getElementById("pageTitle").textContent = titleMap[v][0];
   document.getElementById("pageDesc").textContent  = titleMap[v][1];
 
-  document.getElementById("sidebar").classList.remove("open");
-}
+  closeSidebar();
 
+document.getElementById("sidebar").classList.remove("open");
+}
+window.scrollTo({ top: 0, behavior: "smooth" });
 /* =========================================================
   RENDER
 ========================================================= */
@@ -864,8 +885,24 @@ document.addEventListener("DOMContentLoaded", async () => {
     a.addEventListener("click", (e)=>{ e.preventDefault(); showView(a.dataset.view); });
   });
 
-  document.getElementById("btnOpenSidebar").addEventListener("click", ()=> document.getElementById("sidebar").classList.add("open"));
-  document.getElementById("btnCloseSidebar").addEventListener("click", ()=> document.getElementById("sidebar").classList.remove("open"));
+  const sidebar = document.getElementById("sidebar");
+const overlay = document.getElementById("overlay");
+
+function openSidebar(){
+  sidebar.classList.add("open");
+  overlay.classList.add("show");
+  document.body.style.overflow = "hidden"; // stop scroll belakang
+}
+function closeSidebar(){
+  sidebar.classList.remove("open");
+  overlay.classList.remove("show");
+  document.body.style.overflow = ""; // balikin scroll
+}
+
+document.getElementById("btnOpenSidebar").addEventListener("click", openSidebar);
+document.getElementById("btnCloseSidebar").addEventListener("click", closeSidebar);
+overlay.addEventListener("click", closeSidebar);
+
 
   document.getElementById("btnGenReport").addEventListener("click", renderReport);
   document.getElementById("btnReload").addEventListener("click", loadFromSheets);
@@ -961,5 +998,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 </script>
 
+<div id="overlay"></div>
 </body>
 </html>
